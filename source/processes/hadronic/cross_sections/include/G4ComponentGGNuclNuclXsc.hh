@@ -23,14 +23,14 @@
 // * acceptance of all terms of the Geant4 Software license.          *
 // ********************************************************************
 //
-// Calculation of the nucleus-nucleus total, inelastic, production, 
+// Calculation of the nucleus-nucleus total, inelastic, production,
 // elastic and quasi-elastic  cross-sections
 // based on parametrisations of nucleon-nucleon
-// cross-sections  in 
+// cross-sections  in
 // the framework of simplified Glauber-Gribov approach
 //
 //
-// 24.11.08 V. Grichine - first implementation based on 
+// 24.11.08 V. Grichine - first implementation based on
 //                        G4GlauberGribovCrossSection
 //
 // 04.09.18 V. Ivantchenko Major revision of interfaces and implementation
@@ -60,7 +60,7 @@ public:
 
   // virtual interface methods
   G4double GetTotalElementCrossSection(const G4ParticleDefinition* aParticle,
-				       G4double kinEnergy, 
+				       G4double kinEnergy,
 				       G4int Z, G4double A) final;
 
   G4double GetTotalIsotopeCrossSection(const G4ParticleDefinition* aParticle,
@@ -68,23 +68,23 @@ public:
 				       G4int Z, G4int A) final;
 
   G4double GetInelasticElementCrossSection(const G4ParticleDefinition* aParticle,
-					   G4double kinEnergy, 
+					   G4double kinEnergy,
 					   G4int Z, G4double A) final;
 
   G4double GetInelasticIsotopeCrossSection(const G4ParticleDefinition* aParticle,
-					   G4double kinEnergy, 
+					   G4double kinEnergy,
 					   G4int Z, G4int A) final;
 
   G4double GetElasticElementCrossSection(const G4ParticleDefinition* aParticle,
-					 G4double kinEnergy, 
+					 G4double kinEnergy,
 					 G4int Z, G4double A) final;
 
   G4double GetElasticIsotopeCrossSection(const G4ParticleDefinition* aParticle,
-					 G4double kinEnergy, 
+					 G4double kinEnergy,
 					 G4int Z, G4int A) final;
- 
+
   G4double ComputeQuasiElasticRatio(const G4ParticleDefinition* aParticle,
-				    G4double kinEnergy, 
+				    G4double kinEnergy,
 				    G4int Z, G4int A) final;
 
   void BuildPhysicsTable(const G4ParticleDefinition&) final;
@@ -92,23 +92,23 @@ public:
   void DumpPhysicsTable(const G4ParticleDefinition&) final;
 
   void Description(std::ostream&) const final;
-   
+
   // Glauber-Gribov cross section
   void ComputeCrossSections(const G4ParticleDefinition* aParticle,
 			    G4double kinEnergy, G4int Z, G4int A);
 
   // Extra methods
-  G4bool IsElementApplicable(const G4DynamicParticle*, 
+  G4bool IsElementApplicable(const G4DynamicParticle*,
                              G4int Z, const G4Material*);
 
-  inline G4double GetElementCrossSection(const G4DynamicParticle*, 
+  inline G4double GetElementCrossSection(const G4DynamicParticle*,
 				         G4int Z, const G4Material*);
 
-  inline G4double GetZandACrossSection(const G4DynamicParticle*, 
+  inline G4double GetZandACrossSection(const G4DynamicParticle*,
 				       G4int Z, G4int A);
 
-  inline G4double GetCoulombBarier(const G4DynamicParticle*, 
-			           G4double Z, G4double A, 
+  inline G4double GetCoulombBarier(const G4DynamicParticle*,
+			           G4double Z, G4double A,
                                    G4double pR, G4double tR);
 
   G4double ComputeCoulombBarier(const G4ParticleDefinition* aParticle,
@@ -127,22 +127,24 @@ public:
                                  G4double pTkin, const G4ParticleDefinition*);
 
   G4double GetHNinelasticXscVU(const G4DynamicParticle*, G4int At, G4int Zt);
-  G4double CalculateEcmValue(G4double, G4double, G4double); 
+  G4double CalculateEcmValue(G4double, G4double, G4double);
   G4double CalcMandelstamS(G4double, G4double, G4double);
 
   inline G4double GetElasticGlauberGribov(const G4DynamicParticle*,G4int Z, G4int A);
   inline G4double GetInelasticGlauberGribov(const G4DynamicParticle*,G4int Z, G4int A);
 
-  inline G4double GetTotalGlauberGribovXsc() const       { return fTotalXsc;     }; 
-  inline G4double GetElasticGlauberGribovXsc() const     { return fElasticXsc;   }; 
-  inline G4double GetInelasticGlauberGribovXsc() const   { return fInelasticXsc; }; 
-  inline G4double GetProductionGlauberGribovXsc() const  { return fProductionXsc; }; 
-  inline G4double GetDiffractionGlauberGribovXsc() const { return fDiffractionXsc; }; 
-  inline G4double GetRadiusConst() const                 { return fRadiusConst;  }; 
+  inline G4double GetTotalGlauberGribovXsc() const       { return fTotalXsc;     };
+  inline G4double GetElasticGlauberGribovXsc() const     { return fElasticXsc;   };
+  inline G4double GetInelasticGlauberGribovXsc() const   { return fInelasticXsc; };
+  inline G4double GetProductionGlauberGribovXsc() const  { return fProductionXsc; };
+  inline G4double GetDiffractionGlauberGribovXsc() const { return fDiffractionXsc; };
+  inline G4double GetRadiusConst() const                 { return fRadiusConst;  };
   inline void SetEnergyLowerLimit(G4double)              {}; // obsolete
 
-  G4double GetNucleusRadius(const G4DynamicParticle*, const G4Element*);
+  // Methods for calculation of scaling factor for cross-section
+  G4double GetScalingFactorCrSc(const G4ParticleDefinition* aParticle, G4double kinEnergy);
 
+  G4double GetNucleusRadius(const G4DynamicParticle*, const G4Element*);
   G4double GetNucleusRadius(G4int Zt, G4int At);
   G4double GetNucleusRadiusGG(G4int At);
   G4double GetNucleusRadiusDE(G4int Zt, G4int At);
@@ -151,21 +153,21 @@ public:
 private:
 
   G4double fRadiusConst;
- 
+
   G4double fTotalXsc, fElasticXsc, fInelasticXsc, fProductionXsc, fDiffractionXsc;
- 
+
   const G4ParticleDefinition* theProton;
   const G4ParticleDefinition* theNeutron;
 
-  G4ComponentGGHadronNucleusXsc* fHadrNucl; 
+  G4ComponentGGHadronNucleusXsc* fHadrNucl;
   G4HadronNucleonXsc* fHNXsc;
   G4Pow* fCalc;
-  G4NistManager* fNist; 
+  G4NistManager* fNist;
 
   // Cache
   const G4ParticleDefinition* fParticle;
   G4double fEnergy;
-  G4int fZ, fA;    
+  G4int fZ, fA;
 };
 
 inline G4double
@@ -201,9 +203,9 @@ G4ComponentGGNuclNuclXsc::GetZandACrossSection(const G4DynamicParticle* dp,
   return fInelasticXsc;
 }
 
-inline G4double 
-G4ComponentGGNuclNuclXsc::GetCoulombBarier(const G4DynamicParticle* dp, 
-					   G4double Z, G4double A, 
+inline G4double
+G4ComponentGGNuclNuclXsc::GetCoulombBarier(const G4DynamicParticle* dp,
+					   G4double Z, G4double A,
 					   G4double pR, G4double tR)
 {
   return ComputeCoulombBarier(dp->GetDefinition(), dp->GetKineticEnergy(),

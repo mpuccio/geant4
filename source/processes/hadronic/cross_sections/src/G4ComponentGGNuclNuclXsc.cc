@@ -38,6 +38,8 @@
 #include "G4ComponentGGHadronNucleusXsc.hh" 
 #include "G4Pow.hh"
 
+#include <dlfcn.h>
+
 static const G4double inve = 1./CLHEP::eplus;
 
 G4ComponentGGNuclNuclXsc::G4ComponentGGNuclNuclXsc() 
@@ -86,7 +88,7 @@ G4double G4ComponentGGNuclNuclXsc::GetInelasticElementCrossSection(
 	 G4int Z, G4double A)
 {
   ComputeCrossSections(aParticle, kinEnergy, Z, G4lrint(A));
-  return fInelasticXsc;
+  return fInelasticXsc * GetScalingFactorCrSc(aParticle,kinEnergy);
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -96,7 +98,7 @@ G4double G4ComponentGGNuclNuclXsc::GetInelasticIsotopeCrossSection(
 	 G4int Z, G4int A)
 {
   ComputeCrossSections(aParticle, kinEnergy, Z, A);
-  return fInelasticXsc;
+  return fInelasticXsc * GetScalingFactorCrSc(aParticle,kinEnergy);
 }
 
 //////////////////////////////////////////////////////////////////
@@ -295,6 +297,29 @@ G4double G4ComponentGGNuclNuclXsc::GetRatioQE(
 		       G4lrint(tZ), G4lrint(tA));
 
   return (fInelasticXsc > 0.0) ? 1.0 - fProductionXsc/fInelasticXsc : 0.0;
+}
+
+// //////////////////////////////////////////////////////////////////////////
+// Calculation of scaling factor for Inelastic Cross-section
+
+G4double G4ComponentGGNuclNuclXsc::GetScalingFactorCrSc(const G4ParticleDefinition* aParticle, G4double kinEnergy){
+
+    const G4ParticleDefinition* theParticle = aParticle;
+    G4double mass = theParticle->GetPDGMass();
+    G4double p = std::sqrt(kinEnergy*kinEnergy + 2.0*kinEnergy*mass); // p in MeV
+    p = p/1000.; // make p in GeV
+
+    static void* lib = dlopen("./CustomScalingFunction.so", RTLD_NOW);
+    if (!lib) {
+      return 1.0;
+    }
+    static void* fun = dlsym(lib, "CustomScalingFunction");
+    if (!fun) {
+      return 1.0;
+    }
+    static double (*scaling)(double,int) = (double (*)(double,int)) fun;
+
+    return scaling(p, aParticle->GetPDGEncoding());
 }
 
 ///////////////////////////////////////////////////////////////////////////////
