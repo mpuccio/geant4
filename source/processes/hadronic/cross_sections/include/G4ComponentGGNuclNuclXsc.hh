@@ -118,6 +118,9 @@ public:
   inline G4double GetProductionGlauberGribovXsc() const  { return fProductionXsc; }; 
   inline G4double GetDiffractionGlauberGribovXsc() const { return fDiffractionXsc; }; 
 
+  // Methods for calculation of scaling factor for cross-section
+  G4double GetScalingFactorCrSc(const G4ParticleDefinition* aParticle, G4double kinEnergy);
+
 private:
 
   // Glauber-Gribov cross section
