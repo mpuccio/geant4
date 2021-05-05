@@ -80,14 +80,20 @@ class G4ComponentAntiNuclNuclearXS : public G4VComponentCrossSection {
     G4double GetAntiHadronNucleonTotCrSc(const G4ParticleDefinition* aParticle, G4double kinEnergy);
     // Method for calculation of Anti-Hadron Nucleon Elastic Cross-section
     G4double GetAntiHadronNucleonElCrSc(const G4ParticleDefinition* aParticle, G4double kinEnergy);
+    
+    // Methods for calculation of scaling factor for cross-section
+    G4double GetScalingFactorCrSc(const G4ParticleDefinition* aParticle, G4double kinEnergy);
+    G4double GetScalingFactorCrScElastic(const G4ParticleDefinition* aParticle, G4double kinEnergy);
 
-  private:
+private:
     G4double fRadiusEff;  // Effective Radius for AntiNucleus 
     G4double fRadiusNN2;  // Sqr of radius of NN collision
     G4double fTotalXsc, fElasticXsc, fInelasticXsc;
     G4double fAntiHadronNucleonTotXsc, fAntiHadronNucleonElXsc; 
     G4double Elab, S, SqrtS ;
-    G4double Mn, b0, b2,  SqrtS0, S0, R0;  // Parameters for AntiHadron-Nucleon Xsc  
+    G4double Mn, b0, b2,  SqrtS0, S0, R0;  // Parameters for AntiHadron-Nucleon Xsc   
+    G4double fScalingFactorXsc; // scaling factor for cross-sections
+    
     G4ParticleDefinition* theAProton;
     G4ParticleDefinition* theANeutron;
     G4ParticleDefinition* theADeuteron;

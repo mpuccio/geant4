@@ -43,6 +43,7 @@
 #include "G4ParticleDefinition.hh"
 #include "G4Pow.hh"
 
+#include <dlfcn.h>
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -51,7 +52,7 @@ G4ComponentAntiNuclNuclearXS::G4ComponentAntiNuclNuclearXS()
   fRadiusEff(0.0), fRadiusNN2(0.0),
   fTotalXsc(0.0), fElasticXsc(0.0), fInelasticXsc(0.0),
   fAntiHadronNucleonTotXsc(0.0), fAntiHadronNucleonElXsc(0.0),
-  Elab(0.0), S(0.0), SqrtS(0) 
+  Elab(0.0), S(0.0), SqrtS(0), fScalingFactorXsc(1.0)
 {
   theAProton   = G4AntiProton::AntiProton();
   theANeutron  = G4AntiNeutron::AntiNeutron();
@@ -59,12 +60,12 @@ G4ComponentAntiNuclNuclearXS::G4ComponentAntiNuclNuclearXS()
   theATriton   = G4AntiTriton::AntiTriton();
   theAAlpha    = G4AntiAlpha::AntiAlpha();
   theAHe3      = G4AntiHe3::AntiHe3();
-  Mn     = 0.93827231;           // GeV
-  b0     = 11.92;                // GeV^(-2)
-  b2     = 0.3036;               // GeV^(-2)
-  SqrtS0 = 20.74;                // GeV
-  S0     = 33.0625;              // GeV^2
-  R0     = 1.0;                  // default value (V.Ivanchenko)
+ Mn     = 0.93827231;           // GeV
+ b0     = 11.92;                // GeV^(-2)
+ b2     = 0.3036;               // GeV^(-2)
+ SqrtS0 = 20.74;                // GeV
+ S0     = 33.0625;              // GeV^2
+ R0     = 1.0;                  // default value (V.Ivanchenko)
 }
 
 
@@ -83,14 +84,14 @@ G4double G4ComponentAntiNuclNuclearXS::GetTotalElementCrossSection
 (const G4ParticleDefinition* aParticle, G4double kinEnergy, G4int Z, G4double A)
 {
   G4double xsection, sigmaTotal, sigmaElastic;
-  const G4ParticleDefinition* theParticle = aParticle;
-  sigmaTotal   = GetAntiHadronNucleonTotCrSc(theParticle,kinEnergy);
-  sigmaElastic = GetAntiHadronNucleonElCrSc(theParticle,kinEnergy);
+ const G4ParticleDefinition* theParticle = aParticle;
+    sigmaTotal   = GetAntiHadronNucleonTotCrSc(theParticle,kinEnergy);
+    sigmaElastic = GetAntiHadronNucleonElCrSc(theParticle,kinEnergy);
 
-  // calculation of squared radius of  NN-collision
-  fRadiusNN2=sigmaTotal*sigmaTotal*0.1/(8.*sigmaElastic*pi) ;  //fm^2   
+// calculation of squared radius of  NN-collision
+   fRadiusNN2=sigmaTotal*sigmaTotal*0.1/(8.*sigmaElastic*pi) ;  //fm^2   
 
-  // calculation of effective nuclear radius for Pbar and Nbar interactions (can be changed)
+// calculation of effective nuclear radius for Pbar and Nbar interactions (can be changed)
   //A.R. 29-Jan-2013 : use antiprotons/antineutrons as the default case,
   //                   to be used for instance, as first approximation
   //                   without validation, for anti-hyperons. 
@@ -98,20 +99,20 @@ G4double G4ComponentAntiNuclNuclearXS::GetTotalElementCrossSection
     fTotalXsc = sigmaTotal * millibarn;
     return fTotalXsc;
   }
-  fRadiusEff = 1.34*G4Pow::GetInstance()->powA(A,0.23)+1.35/G4Pow::GetInstance()->powA(A,1./3.);   //fm 
+  fRadiusEff = 1.34*G4Pow::GetInstance()->powA(A,0.23)+1.35/G4Pow::GetInstance()->powA(A,1./3.);   //fm
   if ( (Z==1) && (A==2) ) fRadiusEff = 3.800;     //fm
   if ( (Z==1) && (A==3) ) fRadiusEff = 3.300;  
   if ( (Z==2) && (A==3) ) fRadiusEff = 3.300;  
   if ( (Z==2) && (A==4) ) fRadiusEff = 2.376;     
-    
+      
   // calculation of effective nuclear radius for AntiDeuteron interaction (can be changed)
   if (theParticle == theADeuteron) { 
     fRadiusEff = 1.46 * G4Pow::GetInstance()->powA(A,0.21) + 1.45 / G4Pow::GetInstance()->powA(A,1./3.);
     if ( (Z==1) && (A==2) ) fRadiusEff = 3.238;     //fm
     if ( (Z==1) && (A==3) ) fRadiusEff = 3.144;     
     if ( (Z==2) && (A==3) ) fRadiusEff = 3.144;      
-    if ( (Z==2) && (A==4) ) fRadiusEff = 2.544;     
-  }
+    if ( (Z==2) && (A==4) ) fRadiusEff = 2.544;      
+ }
 
   // calculation of effective nuclear radius for AntiHe3 interaction (can be changed)
   if ( (theParticle ==theAHe3) || (theParticle ==theATriton) ) { 
@@ -214,10 +215,14 @@ G4double G4ComponentAntiNuclNuclearXS::GetInelasticElementCrossSection
   G4double ApAt = std::abs(theParticle->GetBaryonNumber()) * A;
 
   inelxsection  = pi*REf2 *10* G4Log(1+(ApAt*sigmaTotal/(pi*REf2*10.))); //mb
-  inelxsection  = inelxsection * millibarn;  
-  fInelasticXsc = inelxsection; 
-
-  return fInelasticXsc;
+  inelxsection  = inelxsection * millibarn;
+  fInelasticXsc = inelxsection;
+    
+  // scale inelastic cross-section with a momentum-dependent factor
+  fScalingFactorXsc = GetScalingFactorCrSc(aParticle,kinEnergy);
+  fInelasticXsc     = inelxsection*fScalingFactorXsc;
+    
+   return fInelasticXsc;
 }
 
 
@@ -239,12 +244,21 @@ G4double G4ComponentAntiNuclNuclearXS::GetInelasticIsotopeCrossSection
 G4double G4ComponentAntiNuclNuclearXS::GetElasticElementCrossSection
 (const G4ParticleDefinition* aParticle, G4double kinEnergy, G4int Z, G4double A)
 {
-  fElasticXsc = GetTotalElementCrossSection(aParticle, kinEnergy, Z, A)-
-                GetInelasticElementCrossSection(aParticle, kinEnergy, Z, A);
-  if (fElasticXsc < 0.) fElasticXsc = 0.;
-  return fElasticXsc;
-}
+ fElasticXsc = GetTotalElementCrossSection(aParticle, kinEnergy, Z, A)-
+   GetInelasticElementCrossSection(aParticle, kinEnergy, Z, A);
+    
+  // keep elastic cross-section unchanged
+  fScalingFactorXsc = GetScalingFactorCrSc(aParticle,kinEnergy);
 
+  fElasticXsc = GetTotalElementCrossSection(aParticle, kinEnergy, Z, A)-
+    GetInelasticElementCrossSection(aParticle, kinEnergy, Z, A)/fScalingFactorXsc;
+
+ if (fElasticXsc < 0.) fElasticXsc = 0.;
+
+ fElasticXsc *= GetScalingFactorCrScElastic(aParticle, kinEnergy);
+ return fElasticXsc;
+}
+ 
  
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -321,15 +335,62 @@ GetAntiHadronNucleonElCrSc(const G4ParticleDefinition* aParticle, G4double kinEn
 }
 
 
+// //////////////////////////////////////////////////////////////////////////
+// Calculation of scaling factor for Inelastic Cross-section
+
+G4double G4ComponentAntiNuclNuclearXS::GetScalingFactorCrSc(const G4ParticleDefinition* aParticle, G4double kinEnergy){
+
+    const G4ParticleDefinition* theParticle = aParticle;
+    G4double mass = theParticle->GetPDGMass();
+    G4double p = std::sqrt(kinEnergy*kinEnergy + 2.0*kinEnergy*mass); // p in MeV
+    p = p/1000.; // make p in GeV
+
+    static void* lib = dlopen("./CustomScalingFunction.so", RTLD_NOW);
+    if (!lib) {
+      return 1.0;
+    }
+    static void* fun = dlsym(lib, "CustomScalingFunction");
+    if (!fun) {
+      return 1.0;
+    }
+    static double (*scaling)(double,int) = (double (*)(double,int)) fun;
+
+    return scaling(p, aParticle->GetPDGEncoding());
+}
+
+
+// //////////////////////////////////////////////////////////////////////////
+// Calculation of scaling factor for Elastic Cross-section
+
+G4double G4ComponentAntiNuclNuclearXS::GetScalingFactorCrScElastic(const G4ParticleDefinition* aParticle, G4double kinEnergy){
+
+    const G4ParticleDefinition* theParticle = aParticle;
+    G4double mass = theParticle->GetPDGMass();
+    G4double p = std::sqrt(kinEnergy*kinEnergy + 2.0*kinEnergy*mass); // p in MeV
+    p = p/1000.; // make p in GeV
+
+    static void* lib = dlopen("./CustomScalingFunction.so", RTLD_NOW);
+    if (!lib) {
+      return 1.0;
+    }
+    static void* fun = dlsym(lib, "CustomScalingFunctionElastic");
+    if (!fun) {
+      return 1.0;
+    }
+    static double (*scaling)(double,int) = (double (*)(double,int)) fun;
+
+    return scaling(p, aParticle->GetPDGEncoding());
+}
+
 /////////////////////////////////////////////////////////////////////////////
 
 void G4ComponentAntiNuclNuclearXS::CrossSectionDescription(std::ostream& outFile) const
 {
   outFile << "The G4ComponentAntiNuclNuclearXS calculates total,\n"
           << "inelastic, elastic cross sections  of anti-nucleons and light \n"
-          << "anti-nucleus interactions with nuclei using Glauber's approach.\n" 
+          << "anti-nucleus interactions with nuclei using Glauber's approach.\n"  
           << "It uses parametrizations of antiproton-proton total and elastic \n"
-          << "cross sections and Wood-Saxon distribution of nuclear density.\n"
+          << "cross sections and Wood-Saxon distribution of nuclear density.\n"   
           << "See details in Phys.Lett. B705 (2011) 235. \n";
 }
 
